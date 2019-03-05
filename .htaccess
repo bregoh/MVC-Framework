@@ -1,0 +1,16 @@
+ErrorDocument 404 /404
+ErrorDocument 403 /403
+ErrorDocument 500 /500
+ErrorDocument 401 /401
+Options -Indexes
+
+RewriteEngine On
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond $1 !^(robots\.txt|css|js|core|fonts|config)
+
+RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteRule ^(.*)$ https://%{SERVER_NAME}/$1 [R,L]
