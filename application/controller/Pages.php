@@ -13,7 +13,7 @@ class Pages extends Controller
 	**/
 	public function index($params)
 	{
-		$this->view->setTemplate('');
+		$this->view->setTemplate(MAIN_TEMPLATE);
 		$this->view->setTitle($params);
 		$this->view->pageView($params);
 	}
