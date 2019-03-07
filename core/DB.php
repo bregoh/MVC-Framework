@@ -89,7 +89,7 @@ class DB
 	{
 		if($this->execute("SELECT * FROM ".$query))
 		{
-			return $this->m_result;
+			//return $this->m_result;
 		}
 	}
 	
@@ -101,7 +101,7 @@ class DB
 		//var_dump($query);
 		if($this->execute($query))
 		{
-			return $this->m_result;
+			//return $this->m_result;
 		}
 	}
 	
@@ -207,7 +207,7 @@ class DB
 	{
 		if(!empty($this->m_result))
 		{
-			while($row = $this->m_result->fetch_array())
+			while($row = $this->m_result->fetch_array(MYSQLI_ASSOC))
 			{
 				$rows[] = $row;
 			}
