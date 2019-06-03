@@ -28,7 +28,7 @@ class File_Manager
 	** The getDirectory function core function that get the.......
 	** directory list, and controls how files are displayed
 	*************************************************************/
-	private function getDirectory($path, $rel = DS, $up = '')
+	public function getDirectory($path, $rel = DS, $up = '')
 	{
 		//var_dump($path);
 		$handle = opendir($path);
@@ -37,7 +37,7 @@ class File_Manager
 		/*************************************************************
 		** Array to hide files from showing in the user interface
 		*************************************************************/
-		$fileArray = array('.','..','.htaccess','core','config.php','index.php','lib','_notes','application','config','css', 'js', 'revolution');
+		$fileArray = array('.', '..', '.htaccess', 'core', 'config.php', 'index.php', 'lib', '_notes', 'application', 'config', 'css', 'js', 'revolution', 'email_templates', 'fonts', 'font-awesome', 'images', 'img', 'jsh_shop', 'README.md', 'favicon.ico', 'deployment-config.json', 'default.php');
 
 		$output .= '<ul id="file-structure" class="list-unstyled" data-path="'.$rel.'">'.$up;
 		while(false != $file = readdir($handle))
@@ -65,7 +65,7 @@ class File_Manager
 					}
 					if($ext == 'pdf')
 					{
-						$img = '<img src="'.BASE_URL.'images/logo-adobe.png" width="30" height="30" />';
+						$img = '<img src="'.BASE_URL.'images/logo-adobe.jpg" width="30" height="30" />';
 					}
 					if($ext == 'txt')
 					{
@@ -111,7 +111,7 @@ class File_Manager
 					{
 						$img = '<img src="'.BASE_URL.'images/excel.png" width="30" height="30" />';
 					}
-					$output .= '<li class="list-folder"><a target="_blank" href="'.BASE_URL.$rel.'/'.$file.'">'.$img.$file.'</a></li>';
+					$output .= '<li class="list-folder"><a target="_blank" href="'.rtrim(BASE_URL, '/').$rel.'/'.$file.'">'.$img.$file.'</a></li>';
 				}
 				$output .= '<div class="dropdown">
 										<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Action
@@ -144,7 +144,8 @@ class File_Manager
 				case 'jpg': case 'jpeg': return 'jpg'; break;
 				case 'png': return 'png'; break;
 				case 'gif': return 'gif'; break;
-				case 'doc':	case 'docx': return 'doc'; break;
+				case 'doc':	return 'doc'; break;
+				case 'docx': return 'docx'; break;
 				case 'css': return 'css'; break;
 				case 'php': return 'php'; break;
 				case 'js': return 'js'; break;
@@ -438,7 +439,7 @@ class File_Manager
 			for($i = 0; $i < count($this->newfile['tmp_name']); $i++)
 			{
 				$fileName = $this->newfile['name'][$i];
-				$newNameTemp = rand(10000,1000000);
+				$newNameTemp = ($this->fileName == "") ? rand(10000,1000000) : $this->fileName."_".($i+1);
 				$fileTmp = $this->newfile['tmp_name'][$i];
 				
 				$ext = $this->getFileExtension($fileName);
@@ -470,8 +471,9 @@ class File_Manager
 					// check if its a single file resize or an array of size
 					if(empty($sizeArray) & $height > 0 && $width > 0)
 					{
-						$path = $this->uploadpath.DS.$newNameTemp.$height.'x'.$width.".".$ext;
 						$newName = $newNameTemp."_".$height.'x'.$width.".".$ext;
+						$path = $this->uploadpath.DS.$newName;
+						
 						if($this->saveImage($src, $path, $ext, $width, $height, $oldwidth, $oldheight))
 						{
 							array_push($this->getuploadPath, BASE_URL.$this->p.'/'.$newName);
@@ -503,7 +505,7 @@ class File_Manager
 		return true;
 	}
 	
-	public function upload($file)
+	public function upload($file, $filename = "")
 	{
 		$this->newfile = $file;
 		$copy = "";
@@ -519,7 +521,10 @@ class File_Manager
 				
 				$ext = $this->getFileExtension($fileName);
 				
-				$newName = $newNameTemp.".".$ext;
+				$newName = $filename.".".$ext;;
+				
+				if($filename == "")
+					$newName = $newNameTemp.".".$ext;
 				
 				$v = $i + 1;
 				
@@ -533,7 +538,7 @@ class File_Manager
 					
 					move_uploaded_file($fileTmp, $this->uploadpath.DS.$newName);
 					array_push($this->getuploadPath, BASE_URL.$this->p.'/'.$newName);
-					unlink($fileTmp);
+					//unlink($fileTmp);
 				}		
 				
 			}

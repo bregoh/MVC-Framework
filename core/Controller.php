@@ -41,6 +41,12 @@ class Controller extends Core
 	
 	public $email;
 	
+	public $geoloc;
+	
+	public $payment;
+	
+	public $handler;
+	
 	/*
 	** Controller instance
 	*/
@@ -67,6 +73,12 @@ class Controller extends Core
 		$this->u_session = new Sessions;
 		
 		$this->email = new Email;
+		
+		$this->geoloc = new Geolocation;
+		
+		$this->payment = new PaymentAPI;
+		
+		$this->handler = new Handler;
 	}
 	
 	public function __get($key)
@@ -74,5 +86,6 @@ class Controller extends Core
 		$obj = $this->registry->$key;
 		return $obj;
 	}
+	
 }
 ?>

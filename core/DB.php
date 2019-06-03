@@ -26,6 +26,8 @@ class DB
 	
 	public $lastInsertID;
 	
+	public $sql_error;
+	
 	/*
 	** It is important to maintain a singleton
 	** state, that is why we should create a 
@@ -70,9 +72,11 @@ class DB
 	*/
 	private function execute($data)
 	{
-		$sql = $this->m_dbObj->query($this->escapeString($data));
+		$sql = $this->m_dbObj->query($data);
+		
 		if(!$sql)
 		{
+			$this->sql_error = $this->m_dbObj->error;
 			return false;
 		}
 		else
@@ -89,7 +93,7 @@ class DB
 	{
 		if($this->execute("SELECT * FROM ".$query))
 		{
-			//return $this->m_result;
+			return $this->m_result;
 		}
 	}
 	
@@ -101,7 +105,7 @@ class DB
 		//var_dump($query);
 		if($this->execute($query))
 		{
-			//return $this->m_result;
+			return $this->m_result;
 		}
 	}
 	
@@ -123,7 +127,7 @@ class DB
 		$fields = substr($fields, 0, -1);
 		$values = $this->escapeString(substr($values, 0, -1));
 		$insert = "INSERT INTO $table ({$fields}) VALUES ({$values})"; //var_dump($insert);
-		return $this->execute($insert);
+		return $this->execute($this->escapeString($insert));
 	}
 	
 	/*
@@ -135,7 +139,7 @@ class DB
 		//then do not add limit to query else add limit to query
 		$limit = ($limit == '') ? '' : 'LIMIT '.$limit;
 		$delete = "DELETE FROM {$table} WHERE {$condition} {$limit}";
-		return $this->execute($delete);
+		return $this->execute($this->escapeString($delete));
 		// using {} for variable makes easy concatenation
 	}
 	
@@ -156,7 +160,7 @@ class DB
 			$update .= "WHERE ".$condition;
 		}
 		//var_dump($update);
-		return $this->execute($update);
+		return $this->execute($this->escapeString($update));
 	}
 	
 	/*
@@ -207,6 +211,7 @@ class DB
 	{
 		if(!empty($this->m_result))
 		{
+			$rows = [];
 			while($row = $this->m_result->fetch_array(MYSQLI_ASSOC))
 			{
 				$rows[] = $row;
@@ -217,6 +222,21 @@ class DB
 		{
 			return null;
 		}	
+	}
+	
+	public function response()
+	{
+		$rows = array();
+		if(!empty($this->m_result))
+		{
+			while($row = $this->m_result->fetch_array(MYSQLI_ASSOC))
+			{
+				array_push($rows, $row);
+			}
+			return json_encode($rows);
+		}
+		
+		return $rows;
 	}
 	
 	/*

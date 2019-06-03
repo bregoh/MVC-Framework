@@ -29,10 +29,11 @@ class Router
 	** Redirect
 	**/
 	
-	public static function redirect($page)
+	public static function redirect($page = '')
 	{
 		header("location: ".BASE_URL.$page);
 	}
+	
 	
 	/*
 	** Get the URL strings, Cleans the Strings
