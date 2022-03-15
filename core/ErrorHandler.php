@@ -19,13 +19,6 @@ class ErrorHandler
 	*/
 	function printError($errno, $errstr, $errfile, $errline)
 	{
-		// $error = "
-		// 	<b>Date: </b> ".date("Y-m-d H:i:s")." <br/>
-		// 	<b>Custom error: </b> [$errno] <br/>
-		// 	<b>Message: </b> $errstr <br/>
-		// 	<b>Line: </b> $errline <br/>
-		// 	<b>File: </b> $errfile <br/>
-		// ";
 
 		$error = [];
 		$error["Date"] = date("Y-m-d H:i:s");
