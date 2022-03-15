@@ -77,12 +77,6 @@ class Security
 		return false;
 	}
 
-	// public static function csrfInput()
-	// {
-	// 	self::generateToken();
-	// 	return '<input type="text" name="csrf_token" id="csrf_token" value="'.Sessions::get("csrf_token").'" />';
-	// }
-
 	public static function sanitize($dirty) 
 	{
 		return htmlentities($dirty, ENT_QUOTES, 'UTF-8');
