@@ -1,12 +1,15 @@
 <?php
 
+namespace Core;
+
 class ErrorHandler
 {
+	public $errorLog = null;
+	
 	public function __construct()
 	{
 		$this->_set_error_reporting();
 		$this->_unregister_globals();
-		$this->_getError();
 	}
 	
 	/*
@@ -16,12 +19,40 @@ class ErrorHandler
 	*/
 	function printError($errno, $errstr, $errfile, $errline)
 	{
-		echo "
-			<b>Custom error: </b> [$errno] <br/>
-			<b>Message: </b> $errstr <br/>
-			<b>Line: </b> $errline <br/>
-			<b>File: </b> $errfile <br/>
-		";
+		// $error = "
+		// 	<b>Date: </b> ".date("Y-m-d H:i:s")." <br/>
+		// 	<b>Custom error: </b> [$errno] <br/>
+		// 	<b>Message: </b> $errstr <br/>
+		// 	<b>Line: </b> $errline <br/>
+		// 	<b>File: </b> $errfile <br/>
+		// ";
+
+		$error = [];
+		$error["Date"] = date("Y-m-d H:i:s");
+		$error["Custom error"] = $errno;
+		$error["Message"] = $errstr;
+		$error["Line"] = $errline;
+		$error["File"] = $errfile;
+
+		if(DEBUG)
+		{
+			echo "<pre>";
+            var_dump($error);
+        	echo "</pre>";
+		}
+		else
+		{
+			$errorFile = ROOT_DIR . DS . 'debug' . DS . 'logs' . DS . 'errors.log';
+			$fp = fopen($errorFile, 'a');//opens file in append mode  
+			fwrite($fp, implode("\n", $error));
+			fwrite($fp, "\n".'====================================='."\n");  
+			fclose($fp);  
+		}
+	}
+
+	function setError($e)
+	{
+		$this->errorLog = $e;
 	}
 	
 	/*
@@ -55,12 +86,13 @@ class ErrorHandler
 			error_reporting(0);
 			ini_set('display_errors', 0);
 			ini_set('log_errors', 1);
-			ini_set('error_log', ROOT_DIR . DS . 'tmp' . DS . 'logs' . DS . 'error_log');
 		}
+		
+		$this->_getError();
 	}
 	
 	/*
-	** Make sure no registered global is not used
+	** Make sure unregistered global is used
 	** For security
 	*/
 	private function _unregister_globals()

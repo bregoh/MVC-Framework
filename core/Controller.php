@@ -1,5 +1,9 @@
 <?php
-class Controller extends Core
+
+namespace Core;
+use Core\ErrorHandler;
+
+class Controller extends ErrorHandler
 {
 	/*
 	** Controller object
@@ -12,78 +16,35 @@ class Controller extends Core
 	protected $_method;
 	
 	/*
-	** view/page object
-	*/
-	public $view;
-	
-	/*
-	** Assign the query m_result
-	*/
-	private $m_result = '';
-	
-	/*
-	** Store Load class object
-	*/
-	public $load;
-	
-	/*
-	** Store Registry class object
-	*/
-	public $registry;
-	
-	public $security;
-	
-	public $file_handler;
-	
-	public $db = null;
-	
-	public $u_session;
-	
-	public $email;
-	
-	public $geoloc;
-	
-	public $payment;
-	
-	public $handler;
-	
-	/*
 	** Controller instance
-	*/
+	*/	
+	/**
+	 * __construct
+	 *
+	 * @param  mixed $controller
+	 * @param  mixed $method
+	 * @return void
+	 */
 	public function __construct($controller = null, $method = null)
 	{
-		$this->load = new Load;
-		
 		parent::__construct();
 		
 		$this->_controller = $controller;
 		
 		$this->_method = $method;
-		
-		$this->view = new View;
-		
-		$this->registry = Registry::getInstance();
-		
-		$this->security = new Security;
-		
-		$this->file_handler = new File_Manager;
-		
-		$this->db = DB::getInstance();
-		
-		$this->u_session = new Sessions;
-		
-		$this->email = new Email;
-		
-		$this->geoloc = new Geolocation;
-		
-		$this->payment = new PaymentAPI;
-		
-		$this->handler = new Handler;
+
 	}
-	
+		
+	/**
+	 * __get
+	 *
+	 * @param  mixed $key
+	 * @return void
+	 */
 	public function __get($key)
 	{
-		$obj = $this->registry->$key;
+		$registry = Registry::getInstance();
+		$obj = $registry->$key;
 		return $obj;
 	}
 	

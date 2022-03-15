@@ -1,5 +1,7 @@
 <?php
 
+namespace Core;
+
 class Cookies
 {
 	public static function set_cookies($name, $value, $duration)

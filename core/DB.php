@@ -1,275 +1,206 @@
 <?php
 
-class DB
-{
-	/*
-	** DB Object
-	*/
-	private $m_dbObj = null;
-	
-	/*
-	** Singleton Object for external connection
-	*/
-	private static $m_dbInstance = null;
-	
-	/*
-	** Assign the query m_result
-	*/
-	private $m_result = '';
-	
-	/*
-	** Define DB driver
-	*/
-	private $m_driver;
-	
-	private $_dbName;
-	
-	public $lastInsertID;
-	
-	public $sql_error;
-	
-	/*
-	** It is important to maintain a singleton
-	** state, that is why we should create a 
-	** constructor for a single DB object
-	*/
-	private function __construct()
-	{
-		$this->m_driver = DB_DRIVER;
-		// Connect to MySQLi 
-		include(ROOT_DIR . DS . 'config'  . DS . 'dbconfig.php');
-		$this->m_dbObj = new $this->m_driver($db['host'], $db['username'], $db['password'], $db['dbname']);
-		if($this->m_dbObj->connect_error)
-		{
-			die("Error in connecting to DataBase");
-		}
-		self::$m_dbInstance = $this->m_dbObj;
-		
-		$this->_dbName = $db['dbname'];
-	}
-	
-	/*
-	** Create an Object of the Connection
-	*/
-	public static function getInstance()
-	{
-		// if the instance of the connection is empty
-		if(self::$m_dbInstance == null || !isset(self::$m_dbInstance))
-		{
-			self::$m_dbInstance = new DB;
-		}
-		
-		return self::$m_dbInstance;
-	}
-	
-	/////////////////////////////////////////////////
-	// Now for some database queries				/
-	// INSERT, DELETE, UPDATE and SELECT functions	/
-	/////////////////////////////////////////////////
-	
-	/*
-	** Execute Query function
-	*/
-	private function execute($data)
-	{
-		$sql = $this->m_dbObj->query($data);
-		
-		if(!$sql)
-		{
-			$this->sql_error = $this->m_dbObj->error;
-			return false;
-		}
-		else
-		{
-			$this->m_result = $sql;
-			return true;
-		}
-	}
-	
-	/*
-	** Select data from DB
-	*/
-	public function select($query)
-	{
-		if($this->execute("SELECT * FROM ".$query))
-		{
-			return $this->m_result;
-		}
-	}
-	
-	/*
-	** Custom Queries from th database
-	*/
-	public function cusQuery($query)
-	{
-		//var_dump($query);
-		if($this->execute($query))
-		{
-			return $this->m_result;
-		}
-	}
-	
-	/*
-	** Insert function from DB
-	*/
-	public function insert($table, $data)
-	{
-		$fields = "";
-		$values = "";
-		
-		foreach($data as $f => $v)
-		{
-			$fields .= "$f,";
-			$values .= (is_numeric($v) && (intval($v) == $v)) ? $v."," : "'$v',";
-			// if values are numeric, don't put them in apostrophe, else put them in apostrophe
-		}
-		// as usual don't forget to remove trailing comma
-		$fields = substr($fields, 0, -1);
-		$values = $this->escapeString(substr($values, 0, -1));
-		$insert = "INSERT INTO $table ({$fields}) VALUES ({$values})"; //var_dump($insert);
-		return $this->execute($this->escapeString($insert));
-	}
-	
-	/*
-	** Delete function from DB
-	*/
-	public function delete($table, $condition, $limit = '')
-	{
-		//using ternary if condition, if limit is empty, 
-		//then do not add limit to query else add limit to query
-		$limit = ($limit == '') ? '' : 'LIMIT '.$limit;
-		$delete = "DELETE FROM {$table} WHERE {$condition} {$limit}";
-		return $this->execute($this->escapeString($delete));
-		// using {} for variable makes easy concatenation
-	}
-	
-	/*
-	** Update function from DB
-	*/
-	public function update($table, $data, $condition)
-	{
-		$update = "UPDATE {$table} SET ";
-		foreach($data as $field => $value)
-		{
-			$update .= $field."= '{$value}',";
-		}
-		$update = substr($update, 0, -1);
-		
-		if($condition != '')
-		{
-			$update .= "WHERE ".$condition;
-		}
-		//var_dump($update);
-		return $this->execute($this->escapeString($update));
-	}
-	
-	/*
-	** Get last insert ID of the recent 
-	** insert function
-	*/
-	public function lastInsertID()
-	{
-		$this->lastInsertID = $this->m_dbObj->insert_id;
-		return $this->m_dbObj->insert_id;
-	}
-	
-	/*
-	** get the num rows of the recent query
-	*/
-	public function getNumRows()
-	{
-		return $this->m_result->num_rows;
-	}
-	
-	/*
-	** get the Affected rows of the recent query
-	*/
-	public function affectedRows()
-	{
-		return $this->m_dbObj->affected_rows;
-	}
-	/*
-	** get table fields
-	*/
-	public function getTblFields($table)
-	{
-		$query = "SHOW COLUMNS FROM $table FROM $this->_dbName";
-		$this->execute($query);
-		$rows = [];
-		while($row = $this->m_result->fetch_array())
-		{
-			$rows[] = $row["Field"];
-		}
-		
-		return $rows;
-	}
-	
-	/*
-	** get the m_results of the recent query
-	*/
-	public function result()
-	{
-		if(!empty($this->m_result))
-		{
-			$rows = [];
-			while($row = $this->m_result->fetch_array(MYSQLI_ASSOC))
-			{
-				$rows[] = $row;
-			}
-			return $rows;
-		}
-		else
-		{
-			return null;
-		}	
-	}
-	
-	public function response()
-	{
-		$rows = array();
-		if(!empty($this->m_result))
-		{
-			while($row = $this->m_result->fetch_array(MYSQLI_ASSOC))
-			{
-				array_push($rows, $row);
-			}
-			return json_encode($rows);
-		}
-		
-		return $rows;
-	}
-	
-	/*
-	** Verify data before sending to DB
-	*/
-	private function escapeString($value)
-	{
-		return htmlentities($value);
-	}
-	
-	public function validateText($text)
-	{
-		return preg_replace('#[^A-Za-z]#i', '', $text);
-	}
-	
-	public function validateNumText($text)
-	{
-		return preg_replace('#[^A-Za-z0-9]#i', '', $text);
-	}
-	
-	public function validateNum($text)
-	{
-		return preg_replace('#[^0-9]#i', '', $text);
-	}
-	
-	public function validateEmail($email)
-	{
-		return filter_var($email, FILTER_SANITIZE_EMAIL);
-	}
-	
-	public function __deconstruct()
-	{
-		$this->m_dbObj->close();
-	}
-}
+    namespace Core;
+    use \PDO;
+    use \PDOException;
+
+    class DB
+    {
+        private static $_instance = null;
+        private $_pdo;
+        private $_mysql;
+        private $_query;
+        private $_error = false;
+        public $errorInfo = null;
+        private $_result;
+        private $_count = 0;
+        private $_lastInsertID = null;
+
+        private function __construct()
+        {
+            require_once(ROOT_DIR . DS . 'config' . DS . 'config.php');
+
+            $config = CONFIG;
+            $env = 'live';
+
+            $host = $config[$env]["db"]["host"];
+            $user = $config[$env]["db"]["user"];
+            $pass = $config[$env]["db"]["password"];
+            $dbName = $config[$env]["db"]["dbname"];
+
+            try
+            {
+                $this->_pdo = new PDO("mysql:host=$host;dbname=$dbName;charset=utf8", $user, $pass, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
+            }
+            catch(PDOException $e)
+            {
+                dnd($e->getMessage());
+            }
+        }
+
+        public static function getInstance()
+        {
+            if(!isset(self::$_instance))
+            {
+                self::$_instance = new DB();
+            }
+
+            return self::$_instance;
+        }
+
+        public function query($sql, $params = [], $fetch = false)
+        {
+            $this->_error = false;
+
+            $this->_pdo->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING );
+            
+            if($this->_query = $this->_pdo->prepare($sql))
+            {
+                $x = 1;
+                if(!empty($params))
+                {
+                    foreach($params as $param)
+                    {
+                        $this->_query->bindValue($x, $param);
+                        $x++;
+                    }
+                }
+
+                if($this->_query->execute())
+                {
+                    if(!$fetch)
+                    {
+                        $this->_result = $this->_query->fetchALL(PDO::FETCH_OBJ);
+                    }
+                    $this->_count = $this->_query->rowCount();
+                    $this->_lastInsertID = $this->_pdo->lastInsertId();
+                }
+                else
+                {
+                    $this->_error = true;
+                    $this->errorInfo = $this->_pdo->errorInfo();
+                }
+            }
+
+            return $this;
+        }
+
+        public function insert($table, $data = [])
+        {
+            $fields = "";
+            $values = [];
+            $valueString = "";
+
+            foreach($data as $field => $value)
+            {
+                $fields .= "`".$field."`,";
+                $valueString .= "?,";
+                $values[] = $value;
+            }
+
+            $fields = rtrim($fields, ",");
+            $valueString = rtrim($valueString, ",");
+
+            $sql = "INSERT INTO {$table} ({$fields}) VALUES ({$valueString})";
+            
+            if(!$this->query($sql, $values, true)->error())
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public function update($table, $data = [], $condition)
+        {
+            $fields = "";
+            $values = [];
+
+            foreach($data as $field => $value)
+            {
+                $fields .= $field . " = ?, ";
+                $values[] = $value;
+            }
+
+            $fields = rtrim($fields, ", ");
+
+            $sql = "UPDATE {$table} SET {$fields} WHERE {$condition}";
+            
+            if(!$this->query($sql, $values, true)->error())
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public function delete($table, $condition)
+        {
+            $sql =  "DELETE FROM {$table} WHERE {$condition}";
+
+            if(!$this->query($sql, [], true)->error())
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public function first()
+        {
+            return (!empty($this->_result)) ? $this->_result[0] : [];
+        }
+
+        public function count()
+        {
+            return $this->_count;
+        }
+
+        public function lastInsertID()
+        {
+            return $this->_lastInsertID;
+        }
+
+        public function showColumns($table)
+        {
+            $sql = "SHOW COLUMNS FROM {$table}";
+            $columns = [];
+            $column = array();
+
+            if(!$this->query($sql)->error())
+            {
+                $res = $this->query($sql)->result();
+
+                foreach($res as $val)
+                {
+                    $columns["field"] = $val->Field;
+                    $columns["type"] = $val->Type;
+                    $columns["null"] = $val->Null;
+
+                    array_push($column, $columns);
+
+                    $columns = [];
+                }
+
+                return $column;
+            }
+
+            return $this->error();
+        }
+
+        public function result()
+        {
+            return $this->_result;
+        }
+
+        public function error()
+        {
+            return $this->_error;
+        }
+
+        public function showError()
+        {
+            return $this->errorInfo;
+        }
+    }
 ?>
