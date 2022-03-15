@@ -1,5 +1,7 @@
 <?php
 
+namespace Core;
+
 class Registry
 {
 	private static $_instance;

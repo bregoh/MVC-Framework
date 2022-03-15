@@ -1,4 +1,10 @@
 <?php
+
+namespace Core;
+use Core\Security;
+use Core\Sessions;
+use Core\Router;
+
 class View
 {	
 	public $path = ROOT_DIR . DS . 'application'  . DS . 'view' . DS;
@@ -19,7 +25,7 @@ class View
 	/*
 	** Page default layout
 	*/
-	protected $_template = DEFAULT_LAYOUT;
+	protected $_template = DEFAULT_TEMPLATE;
 	
 	public $db;
 	public $security;
@@ -27,13 +33,25 @@ class View
 	
 	public $email;
 	
+	public $geoloc;
+	
+	public $handler;
+
+	public $acl;
+
+	public $param;
+	
+	// a constructor
 	public function __construct()
 	{
-		$this->db = DB::getInstance();
-		$this->security = new Security;
-		$this->u_session = new Sessions;
-		$this->file_handler = new File_Manager;
-		$this->email = new Email;
+		// $this->db = DB::getInstance();
+		// $this->security = new Security;
+		// $this->u_session = new Sessions;
+		// $this->file_handler = new File_Manager;
+		// $this->email = new Email;
+		// $this->geoloc = new Geolocation;
+		// $this->handler = new Handler;
+		// $this->acl = new ACL;
 	}
 	
 	/*
@@ -54,7 +72,7 @@ class View
 			}
 			else
 			{
-				header("location: ".BASE_URL."404");
+				$this->redirect_404("404");
 			}
 		}
 		else
@@ -74,7 +92,7 @@ class View
 			}
 			else
 			{
-				header("location: ".BASE_URL."404");
+				$this->redirect_404("404");
 			}
 
 		}		
@@ -90,23 +108,22 @@ class View
 	
 	
 	/*
+	** Function to set page template
+	*/
+	public function redirect_404($url)
+	{
+        Router::redirect($url);
+	}
+	
+	
+	/*
 	** Function to set page Title
 	*/
 	
 	public function setTitle($title = '')
-	{		
-		$PN = '';
-		
-		if($title == '' || $title == null)
-		{
-			$this->pageTitle = SITE_TITLE;
-		}
-		else
-		{
-			$name = explode('/', $title);
-			$no = count($name) - 1;
-			$PN = $name[$no];
-		}
+	{
+		$PN = \explode(DS, $title);
+		$PN = end($PN);
 		
 		if(strpos($PN, '_') !== false )
 		{
@@ -123,5 +140,30 @@ class View
 			$this->pageTitle = SITE_TITLE." | ".strtoupper($PN);
 		}
 	}
+
+	public static function getToken()
+	{
+		//return Security::csrfInput();
+
+		$token = Security::generateToken();
+		return '<input type="hidden" name="csrf_token" id="csrf_token" value="'.$token.'" />';
+	}
+
+	public static function checkSession()
+	{
+		if(!Sessions::exists('admin') && !Sessions::exists("login"))
+		{
+			Router::redirect("login");
+		}
+	}
+
+	public static function isLoggedIn()
+	{
+		if(Sessions::exists("login") && Sessions::get("login") == true)
+		{
+			Router::redirect();
+		}
+	}
+
 }
 ?>
